@@ -1,0 +1,23 @@
+Early RAG systems perform a single retrieval step per query: embed the
+question, fetch the top matching chunks, and generate once. This works
+well for simple factual questions but struggles with questions that
+require combining evidence from multiple, separately retrieved sources,
+a pattern known as multi-hop reasoning. Multi-hop retrieval addresses this
+by allowing the system to issue several retrieval queries in sequence,
+using the output of one retrieval step to decide what to search for next.
+
+Agentic RAG extends this further by giving the language model control
+over the retrieval process itself, rather than following a fixed
+retrieve-then-generate pipeline. An agentic system can decide whether
+retrieval is even necessary for a given query, choose among multiple
+knowledge sources, reformulate a query that returned poor results, and
+call retrieval repeatedly until it judges the gathered evidence
+sufficient to answer.
+
+A related direction is self-correcting or self-reflective RAG, where the
+system evaluates its own draft answer against the retrieved evidence
+before returning it, and re-retrieves or revises the answer if it detects
+an unsupported claim. Over the next several years, RAG systems are
+expected to move from static, single-pass pipelines toward these more
+autonomous, iterative architectures, narrowing the gap between "search
+and summarize" and genuine multi-step research assistance.

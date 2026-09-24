@@ -1,0 +1,23 @@
+Several open-source frameworks exist to reduce the amount of glue code
+needed to build a RAG system. LangChain provides composable building
+blocks for chaining together document loaders, text splitters, retrievers,
+and language model calls, and is widely used for general-purpose LLM
+application development. LlamaIndex is more specialized: it focuses
+specifically on connecting large language models to external data through
+indexing and retrieval abstractions, and is often preferred when the data
+layer is the hardest part of a project.
+
+On the retrieval side, FAISS is the most common local vector search
+library, while Pinecone, Weaviate, Qdrant, and Milvus are common choices
+when a managed or self-hosted vector database is needed at production
+scale. On the generation side, RAG can sit in front of essentially any
+large language model, including proprietary APIs such as Anthropic's
+Claude models and OpenAI's GPT models, or open-weight models such as
+Llama or Mistral that a team hosts itself.
+
+Choosing a stack usually comes down to three questions: how much data
+needs to be indexed, how much control over infrastructure the team wants,
+and whether the generation step calls an external API or runs a
+self-hosted model. Small class projects and prototypes typically favor
+FAISS plus a hosted LLM API, since it needs no dedicated infrastructure
+and can be built and demonstrated on a single laptop.

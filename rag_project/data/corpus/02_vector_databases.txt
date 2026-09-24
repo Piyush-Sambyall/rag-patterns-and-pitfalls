@@ -1,0 +1,21 @@
+A vector store is the component of a RAG system that makes retrieval fast.
+Documents are split into chunks, each chunk is converted into a numeric
+vector called an embedding, and the vectors are indexed so that, given a
+new query vector, the system can quickly find the stored vectors that are
+closest to it in the embedding space. Closeness in that space is meant to
+correspond to closeness in meaning, so a nearest-neighbor search over
+embeddings behaves like a semantic search over text.
+
+Popular vector stores fall into two categories. Managed, cloud-hosted
+databases such as Pinecone and Weaviate handle scaling, replication, and
+filtering for production workloads. Lightweight, embeddable libraries such
+as FAISS, developed by Meta, run inside a single process and are a common
+choice for prototypes, research, and smaller applications because they add
+no external infrastructure.
+
+Most vector stores use an approximate nearest neighbor algorithm rather
+than an exact search, because exact search over millions of high-dimensional
+vectors is too slow for real-time queries. Approximate methods such as
+HNSW (Hierarchical Navigable Small World graphs) trade a small amount of
+recall for a very large speedup, which is usually the right trade-off for
+interactive applications where a response is expected in under a second.

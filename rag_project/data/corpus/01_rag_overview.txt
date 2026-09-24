@@ -1,0 +1,25 @@
+Retrieval-Augmented Generation, commonly abbreviated RAG, is a technique for
+grounding a language model's output in an external knowledge source at
+inference time. Instead of relying only on facts memorized during training,
+a RAG system fetches relevant text passages from a document store and
+inserts them into the model's prompt before generation. This lets the model
+answer questions about information it was never trained on, such as a
+company's internal policies, a paper published last week, or a codebase
+that changes daily.
+
+The core idea splits language modeling into two separable jobs. Retrieval
+handles finding the right information. Generation handles turning that
+information into a fluent, well-formed answer. Because the two jobs are
+separate, each can be improved independently: a better retriever improves
+answer accuracy without retraining the language model at all, and a bigger
+or newer language model improves fluency without touching the knowledge
+base.
+
+RAG became popular because pure parametric generation, where a large
+language model answers purely from what it memorized during training, has
+two structural weaknesses. First, the model's knowledge is frozen at its
+training cutoff, so it cannot know about anything that happened afterward.
+Second, when a model does not know an answer, it tends to produce a
+fluent, confident-sounding guess rather than admitting uncertainty, a
+failure mode commonly called hallucination. Grounding generation in
+retrieved, verifiable text directly addresses both problems.

@@ -1,0 +1,21 @@
+An embedding model converts a piece of text into a fixed-length vector of
+numbers such that texts with similar meaning end up close together in the
+resulting vector space. Modern embedding models are themselves neural
+networks, typically transformer encoders trained on large amounts of text
+with a contrastive objective that pulls semantically similar pairs of
+texts closer together and pushes dissimilar pairs apart.
+
+The choice of embedding model matters a great deal for retrieval quality.
+General-purpose models trained on broad web text work reasonably well
+across domains, but a model fine-tuned on domain-specific text, such as
+legal documents or medical literature, usually retrieves more relevant
+passages within that domain. Embedding dimensionality is also a practical
+trade-off: higher-dimensional embeddings can capture more nuance but cost
+more to store and search over.
+
+A subtle but important failure mode is embedding drift. If a corpus is
+re-embedded with a different or updated embedding model while old vectors
+from a previous model are left in the index, the two sets of vectors are
+not comparable to each other, and similarity search across them becomes
+unreliable. In production RAG systems, an embedding model upgrade
+therefore requires re-embedding the entire corpus, not just new documents.
