@@ -116,6 +116,58 @@ If the index hasn't been built yet, the app shows a "Build index" button
 so you don't need to touch the terminal at all after the initial
 `pip install`.
 
+### Uploading your own files (PDF, images, video)
+
+The sidebar has an **"📎 Add your own files"** uploader. Any file you drop
+in there is routed by type (`src/file_router.py`):
+
+| Type | How it's read | Extra setup needed |
+|------|---------------|---------------------|
+| PDF (`.pdf`) | Text extraction (`pypdf`) | None |
+| Image (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tiff`, `.webp`) | OCR (`pytesseract`) | Install the Tesseract OCR engine (see below) |
+| Video (`.mp4`, `.mov`, `.mkv`, `.avi`, `.webm`, `.m4v`) | Audio extracted with a bundled ffmpeg, then transcribed with `faster-whisper` | `pip install faster-whisper` (not in the base install — see requirements.txt) |
+
+Extracted content is chunked the same way as the built-in corpus and
+merged into a fresh in-memory index for that session. Your questions can
+then retrieve from your upload(s), the built-in RAG corpus, or both.
+Nothing is written to disk — the persisted `index/store.pkl` is never
+touched by an upload; remove the file from the uploader or restart the
+app and it's gone. If you want something to be part of the permanent
+corpus instead, save its extracted text as a `.txt` file under
+`data/corpus/` and rerun `python -m src.build_index`.
+
+**Installing Tesseract OCR (Windows), needed for image uploads:**
+
+1. Download the installer from
+   https://github.com/UB-Mannheim/tesseract/wiki
+2. Run it (default install path is fine)
+3. Either add the install folder to your PATH, or point `pytesseract` at
+   it directly by adding this near the top of `app_streamlit.py`:
+   ```python
+   import pytesseract
+   pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+   ```
+
+**Video transcription, what to expect:**
+```powershell
+pip install faster-whisper
+```
+The first time you upload a video, it downloads the "tiny" Whisper model
+(~75MB) — that one download needs internet; after that it runs fully
+offline. Audio extraction itself needs no separate ffmpeg install —
+`imageio-ffmpeg` bundles a static binary through pip.
+
+**What was actually verified vs. not, for each type:**
+- **PDF** — fully verified end to end (extraction, chunking, retrieval, correct source attribution).
+- **Image (OCR)** — fully verified end to end with a real generated test image; Tesseract and `pytesseract` ran and extracted real text, which was correctly retrieved.
+- **Video** — the audio-extraction step (ffmpeg) was verified with a real generated test video. The transcription step (`faster-whisper`) could **not** be verified — it isn't installed in the build environment and there's no network there to install it or download the model. The failure path (missing package → clear error message shown in the sidebar) was verified instead. Test the actual transcription yourself before relying on it live.
+
+**Failure behavior:** an image with no text, or a video with no speech,
+adds zero chunks and shows a plain warning (not an error) in the
+sidebar — that's expected, not a bug. A genuine failure (missing
+`faster-whisper`, a corrupt file, an ffmpeg error) shows as a red error
+naming the file and the reason.
+
 > **Note:** `app_streamlit.py` is syntax-checked and built directly on the
 > same tested `src/` pipeline modules as `cli.py` (the retrieval, ranking,
 > augmentation, and generation logic is identical and already verified —
@@ -123,6 +175,55 @@ so you don't need to touch the terminal at all after the initial
 > be launched inside this sandbox (no network access to install
 > `streamlit` here), so run it locally and confirm the browser view looks
 > right before your demo.
+
+## Retrieval accuracy & performance
+
+Retrieval is **hybrid TF-IDF + BM25** (`src/bm25.py`, `src/vector_store.py`),
+not plain TF-IDF cosine similarity. BM25 re-weights the TF-IDF ranking
+using corpus-wide term statistics that model term-frequency saturation
+and document length — it rewards exact keyword matches more directly
+than cosine similarity alone, which measurably helps short, term-heavy
+questions. The combination is designed so BM25 can only ever pull a
+score *down toward* its cosine baseline or boost it *up to* that
+baseline (max 30%) — never past it — so a genuinely irrelevant query
+still gets filtered by the relevance floor in `retriever.py` exactly as
+before.
+
+**Measured, not claimed** — before/after numbers on a labeled 10-query
+eval set (`tests/test_retrieval_quality.py`), benchmarked in this build
+environment:
+
+| Metric | Before (TF-IDF only) | After (hybrid TF-IDF + BM25) |
+|---|---|---|
+| Top-1 retrieval accuracy | 9/10 (90%) | 10/10 (100%) |
+| Off-topic query ("what's the weather like today?") | incorrectly returned 2 chunks (score 0.103) | correctly returns 0 chunks |
+| Latency | 0.46 ms/query | 0.53 ms/query |
+
+Two real bugs were found and fixed along the way, not just the hybrid
+scoring added:
+1. **BM25 needs its own stopword filtering.** Without it, a query like
+   "what is FAISS used for?" let common words like "used" inflate the
+   score of chunks that had nothing to do with FAISS. Fixed by sharing
+   one stopword list between TF-IDF and BM25 (`STOP_WORDS` in `bm25.py`).
+2. **scikit-learn's default English stopword list doesn't include "like".**
+   A query such as "what's the weather like today?" registered "like" as
+   real content and matched any chunk containing it — a genuine false
+   positive that pre-dated the hybrid change. Fixed with a small
+   supplementary stopword set (`_SUPPLEMENTARY_STOP_WORDS` in `bm25.py`),
+   applied to both TF-IDF and BM25 so they can't disagree on what counts
+   as content vs. noise.
+
+**Honest note on "performance":** at this corpus's size (27 chunks),
+retrieval was already sub-millisecond before this change, so there was
+no real latency problem to solve — the ~0.07ms difference above is
+noise-level, not a meaningful speedup or slowdown. The real "performance"
+improvement here is retrieval *quality* (accuracy), plus statistics
+(BM25 index, TF-IDF matrix) being computed once at index-build time
+rather than recomputed per query — which is what makes this design scale
+to a much larger corpus without a latency cliff, even though it isn't
+measurable at the current demo size. `tests/test_retrieval_quality.py`
+guards the accuracy number with an automated floor so future changes
+can't silently regress it.
 
 ## Running the tests
 
@@ -145,13 +246,19 @@ rag_project/
 ├── index/                      saved TF-IDF index (created by build_index.py)
 ├── src/
 │   ├── chunker.py               stage: chunking
-│   ├── vector_store.py          stage: retrieval (index + search)
+│   ├── bm25.py                   dependency-free BM25 scorer (hybrid retrieval)
+│   ├── vector_store.py          stage: retrieval — hybrid TF-IDF + BM25 (index + search)
 │   ├── retriever.py             stage: retrieval + ranking
 │   ├── generator.py              stage: augmentation + generation
+│   ├── pdf_loader.py             extracts + chunks uploaded PDFs (pypdf)
+│   ├── image_loader.py           OCR + chunks uploaded images (pytesseract)
+│   ├── video_loader.py           audio extraction + transcription + chunks uploaded videos (ffmpeg, faster-whisper)
+│   ├── file_router.py            dispatches an upload to the right loader by extension
 │   ├── pipeline.py              orchestrates all stages, RAGPipeline class
 │   └── build_index.py           one-time script to build the index
 └── tests/
-    └── test_pipeline.py         offline unit tests for every stage
+    ├── test_pipeline.py         offline unit tests for every stage
+    └── test_retrieval_quality.py  labeled-eval-set accuracy regression test
 ```
 
 ## Using your own documents

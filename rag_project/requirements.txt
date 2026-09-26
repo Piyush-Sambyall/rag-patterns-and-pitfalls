@@ -4,3 +4,14 @@ anthropic>=0.34.0
 python-dotenv>=1.0.0
 rich>=13.0.0
 streamlit>=1.38.0
+pypdf>=4.0.0
+pillow>=10.0.0
+pytesseract>=0.3.10
+imageio-ffmpeg>=0.5.0
+
+# Optional, only needed for video upload/transcription. Left out of the
+# base install because it's a heavier dependency and downloads a speech
+# model (~75MB) the first time it runs. Install separately if you want it:
+#   pip install faster-whisper
+# faster-whisper>=1.0.0
+pypdf>=4.0.0
