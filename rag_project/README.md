@@ -102,6 +102,16 @@ the exact augmented prompt sent to the generator, and the final answer —
 plus a "Compare vs. no-RAG" toggle that runs the query with and without
 retrieval side by side.
 
+The interface has a dark, animated-gradient theme with no emoji icons —
+plain text labels throughout. After you run a query, a **pipeline trace**
+renders above the results: six connected stages (Query → Retrieval →
+Ranking → Augmentation → Generation → Output) showing that specific
+query's own real numbers at each stage (candidate count, top similarity
+score, chunks injected, which generator ran), with the actual source
+documents the answer is grounded in listed underneath. It's built from
+that run's real `PipelineResult`, not a static picture — ask a different
+question and the numbers change.
+
 ```powershell
 python -m src.build_index
 streamlit run app_streamlit.py
@@ -115,6 +125,16 @@ similarity) live, without editing code.
 If the index hasn't been built yet, the app shows a "Build index" button
 so you don't need to touch the terminal at all after the initial
 `pip install`.
+
+**What was verified vs. not:** the pipeline-trace function
+(`render_flow_diagram`) was imported directly from this exact file and
+run against a real query, then rendered to an image to confirm the HTML
+it generates is correct and matches the real `PipelineResult` — that part
+is genuinely checked, not assumed. The surrounding CSS theme (gradient
+animation, dark styling of Streamlit's own widgets) could only be
+verified as valid CSS, not seen rendered inside a real Streamlit session,
+since `streamlit` itself has no network access to install in this build
+environment. Confirm the overall look once when you first run it.
 
 ### Uploading your own files (PDF, images, video)
 
