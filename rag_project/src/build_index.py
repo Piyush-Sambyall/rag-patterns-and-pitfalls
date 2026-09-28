@@ -1,17 +1,3 @@
-"""
-build_index.py
----------------
-Optional sanity-check utility: reports how many .txt files and chunks are
-currently in data/corpus/ without building or saving anything.
-
-Nothing in this project persists an index to disk anymore -- cli.py and
-app_streamlit.py both build the index fresh, in memory, every time they
-start, directly from data/corpus/. This script exists only so you can
-quickly check your corpus is being read the way you expect:
-
-    python -m src.build_index
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -28,7 +14,7 @@ def main() -> None:
 
     if not sources:
         print(
-            "No .txt files found. This is expected on a fresh checkout -- "
+            "No .txt files found. This is expected on a fresh checkout"
             "drop your own .txt files into data/corpus/ and run this again "
             "if you want to confirm they're picked up correctly."
         )
@@ -46,3 +32,18 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+"""
+build_index.py
+---------------
+Optional sanity-check utility: reports how many .txt files and chunks are
+currently in data/corpus/ without building or saving anything.
+
+Nothing in this project persists an index to disk anymore -- cli.py and
+app_streamlit.py both build the index fresh, in memory, every time they
+start, directly from data/corpus/. This script exists only so you can
+quickly check your corpus is being read the way you expect:
+
+    python -m src.build_index
+"""
