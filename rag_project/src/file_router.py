@@ -1,12 +1,3 @@
-"""
-file_router.py
----------------
-Single entry point the UI calls for any upload, regardless of type.
-Dispatches to the right loader (pdf_loader / image_loader / video_loader)
-by file extension, so app_streamlit.py doesn't need to know the details
-of any one format.
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -42,3 +33,12 @@ def chunk_uploaded_file(file_bytes: bytes, filename: str, max_words: int = 90) -
         f"Unsupported file type '{suffix}'. Supported: "
         f"{', '.join(sorted(ALL_SUPPORTED_EXTENSIONS))}"
     )
+
+"""
+file_router.py
+---------------
+Single entry point the UI calls for any upload, regardless of type.
+Dispatches to the right loader (pdf_loader / image_loader / video_loader)
+by file extension, so app_streamlit.py doesn't need to know the details
+of any one format.
+"""
