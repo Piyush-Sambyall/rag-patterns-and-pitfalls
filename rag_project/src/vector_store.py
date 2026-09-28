@@ -65,12 +65,23 @@ class TfidfVectorStore:
         self._matrix = None  # sparse doc-term matrix, built at index time
 
     def build(self, chunks: list[Chunk]) -> None:
+        """
+        Builds the index from `chunks`. An empty list is valid -- it leaves
+        the store in a deliberate "no data yet" state (chunks=[],
+        matrix=None) rather than raising, since a fresh run with an empty
+        data/corpus/ is the expected starting point, not an error.
+        """
+        self.chunks = list(chunks)
         if not chunks:
-            raise ValueError("Cannot build a vector store from zero chunks.")
-        self.chunks = chunks
+            self._matrix = None
+            return
         texts = [c.text for c in chunks]
         self._matrix = self.vectorizer.fit_transform(texts)
         self.bm25.build(texts)
+
+    def is_empty(self) -> bool:
+        """True if nothing has been indexed yet."""
+        return self._matrix is None or not self.chunks
 
     def add_documents(self, new_chunks: list[Chunk]) -> None:
         """
@@ -95,8 +106,8 @@ class TfidfVectorStore:
         return seen
 
     def search(self, query: str, top_k: int = 4) -> list[ScoredChunk]:
-        if self._matrix is None:
-            raise RuntimeError("Vector store is empty -- call build() first.")
+        if self.is_empty():
+            return []
 
         query_vec = self.vectorizer.transform([query])
         cosine_scores = cosine_similarity(query_vec, self._matrix)[0]

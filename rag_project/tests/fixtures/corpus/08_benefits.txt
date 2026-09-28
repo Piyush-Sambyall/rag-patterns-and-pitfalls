@@ -1,0 +1,24 @@
+Retrieval-augmented generation offers several concrete advantages over
+letting a language model answer purely from what it memorized during
+training. The most cited benefit is reduced hallucination: grounding an
+answer in retrieved evidence lowers the rate of fabricated claims, because
+the model has real text to draw from instead of only its own parametric
+memory. Closely related is source grounding — because the retrieved
+passages are known, an answer can cite exactly which document it came
+from, which lets a reader verify the claim instead of trusting it blindly.
+
+RAG also keeps a system's knowledge up to date without retraining the
+underlying model. When the underlying documents change, re-indexing the
+corpus is enough to refresh what the system knows; there is no need to
+fine-tune or retrain the language model itself. This makes RAG a far more
+cost-effective way to adapt a language model to a new knowledge domain
+than fine-tuning a separate model per domain would be.
+
+Domain customization follows from the same property: a private or
+proprietary corpus can be plugged into the retriever without ever exposing
+that data to the model during training, which matters for organizations
+that cannot send sensitive documents to a third-party training pipeline.
+Finally, retrieval improves recall on long-tail facts — rare, specific
+details that a general-purpose parametric model was never trained heavily
+on, or has since forgotten, can still be found and surfaced as long as
+they exist somewhere in the indexed corpus.

@@ -1,0 +1,22 @@
+Retrieval-augmented generation is deployed across a range of real-world
+products, not just research prototypes. In enterprise search, employees
+query internal wikis, policy documents, and compliance handbooks in plain
+language, and the system returns an answer with citations back to the
+source document, so a result can always be checked against the original
+policy rather than taken on faith.
+
+Customer-facing chatbots are another common deployment: a support bot
+grounds its answers in product manuals and frequently-asked-question
+pages instead of guessing, which reduces the number of conversations that
+have to be escalated to a human agent. A related but distinct use case is
+customer support assist, where a human agent is not replaced but helped —
+the system retrieves similar past tickets and relevant knowledge-base
+articles and drafts a suggested reply, which the agent reviews and sends.
+
+Research assistants are a fourth major application. Tools such as Elicit
+and Perplexity use retrieval to synthesize findings across many academic
+papers or across the live web, letting a user ask a question once and get
+an answer backed by multiple retrieved sources rather than having to read
+each source individually. Across all four use cases, the common thread is
+the same: retrieval lets the system answer from a specific, checkable body
+of text instead of from the model's memorized training data alone.

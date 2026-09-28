@@ -1,4 +1,4 @@
-# RAG Pipeline — Working Reference Implementation
+cdc# RAG Pipeline — Working Reference Implementation
 
 A small, fully functional Retrieval-Augmented Generation pipeline in
 Python, built to accompany the seminar **"Retrieval-Augmented Generation:
@@ -9,10 +9,9 @@ Jammu). It implements every stage from the seminar's pipeline diagram —
 query -> retrieval -> ranking -> augmentation -> generation -> output
 ```
 
-— as real, runnable code, with no mocked-out stages. The demo corpus is
-about RAG itself, so you can literally ask the pipeline questions about
-retrieval, vector databases, and RAG failure modes and watch it answer
-using its own retrieved context.
+— as real, runnable code, with no mocked-out stages. **There is no bundled
+demo corpus.** `data/corpus/` ships empty on purpose — drop in your own
+`.txt` files and the pipeline answers questions grounded in *your* data.
 
 ## What's actually implemented
 
@@ -22,7 +21,7 @@ using its own retrieved context.
 | Retrieval     | `src/vector_store.py`, `src/retriever.py` | TF-IDF vectorization + cosine similarity search over all chunks |
 | Ranking       | `src/retriever.py`       | Relevance floor + source-diversity re-ranking (a simplified MMR) |
 | Augmentation  | `src/generator.py`       | Builds a numbered, citation-ready context prompt |
-| Generation    | `src/generator.py`       | Calls Claude (Anthropic API) if a key is set, else an offline extractive fallback |
+| Generation    | `src/generator.py`       | Calls a local, open-source model via Ollama if a server is reachable, else an offline extractive fallback |
 | Orchestration | `src/pipeline.py`        | `RAGPipeline` ties all stages together and returns every intermediate result |
 | Demo UI       | `cli.py`                 | Interactive terminal REPL, plus a `:compare` mode (RAG vs. no-RAG) |
 
@@ -31,11 +30,33 @@ needs no model download and works fully offline, so the retrieval half of
 the pipeline is guaranteed to work in a live demo even without Wi-Fi. See
 **"Swapping in real embeddings"** below if you want to upgrade it.
 
-Generation calls Claude if `ANTHROPIC_API_KEY` is set, and otherwise falls
-back to an offline extractive generator, so the *entire* pipeline —
-including generation — still runs with zero internet access. This makes a
-good live comparison point in the seminar: "here is the same retrieved
-context, with and without an LLM synthesizing it."
+**Generation is open-source and fully local.** It calls a locally-running
+[Ollama](https://ollama.com) server if one is reachable, and otherwise
+falls back to an offline extractive generator — so the *entire* pipeline,
+generation included, runs with no external API, no account, and no key,
+ever. Setup:
+
+```powershell
+# 1. Install Ollama from https://ollama.com, then:
+ollama pull llama3.2
+# 2. Leave it running (it usually starts automatically as a background service)
+ollama serve
+```
+
+Without Ollama running, the pipeline still runs end to end using the
+offline extractive fallback — nothing is required to get retrieval +
+ranking + augmentation working.
+
+## Fresh by default — no leftover data between runs
+
+Nothing is cached to disk. Every time you start `cli.py` or
+`streamlit run app_streamlit.py`, the index is rebuilt from scratch, in
+memory, from whatever `.txt` files currently sit in `data/corpus/`. There
+is no saved index file to go stale, and no way for a previous session's
+data to silently carry over — add or remove files, restart, and the
+pipeline reflects exactly what's there now, nothing more. Uploads made
+through the Streamlit sidebar are even more short-lived: they exist only
+for that browser session and are never written to `data/corpus/` at all.
 
 ## Setup (Windows PowerShell)
 
@@ -54,28 +75,19 @@ If PowerShell blocks the activation script, run this once and retry:
 Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 ```
 
-(Optional, for LLM-backed generation) copy `.env.example` to `.env` and
-paste in an Anthropic API key from https://console.anthropic.com/settings/keys:
+(Optional) copy `.env.example` to `.env` if you want to point at a
+non-default Ollama host/model/timeout:
 
 ```powershell
 Copy-Item .env.example .env
 notepad .env
 ```
 
-Without a key, the pipeline still runs end to end using the offline
-extractive generator — nothing is required to get retrieval + ranking +
-augmentation working.
-
 ## Running it
 
-Build the vector index once (rerun this whenever you edit files in
-`data/corpus/`):
-
-```powershell
-python -m src.build_index
-```
-
-Then start the interactive demo:
+Add your own `.txt` files to `data/corpus/` (see `data/corpus/README.md`),
+then start the interactive demo — no separate build step needed, the
+index is built fresh each time it starts:
 
 ```powershell
 python cli.py
@@ -113,18 +125,19 @@ that run's real `PipelineResult`, not a static picture — ask a different
 question and the numbers change.
 
 ```powershell
-python -m src.build_index
 streamlit run app_streamlit.py
 ```
 
-This opens automatically in your browser at `http://localhost:8501`. The
-sidebar shows generator status (Claude vs. offline fallback) and lets you
-tune retrieval settings (candidate pool size, final chunk count, minimum
-similarity) live, without editing code.
+No separate index-build step is needed — the app builds the index fresh
+from `data/corpus/` the moment it starts. This opens automatically in your
+browser at `http://localhost:8501`. The sidebar shows generator status
+(Ollama vs. offline fallback) and lets you tune retrieval settings
+(candidate pool size, final chunk count, minimum similarity) live, without
+editing code.
 
-If the index hasn't been built yet, the app shows a "Build index" button
-so you don't need to touch the terminal at all after the initial
-`pip install`.
+`data/corpus/` ships empty, so on first run the app shows a note that
+there's nothing indexed yet — drop `.txt` files in and click "Rescan
+data/corpus/", or just use the sidebar uploader for that session.
 
 **What was verified vs. not:** the pipeline-trace function
 (`render_flow_diagram`) was imported directly from this exact file and
@@ -147,14 +160,14 @@ in there is routed by type (`src/file_router.py`):
 | Image (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tiff`, `.webp`) | OCR (`pytesseract`) | Install the Tesseract OCR engine (see below) |
 | Video (`.mp4`, `.mov`, `.mkv`, `.avi`, `.webm`, `.m4v`) | Audio extracted with a bundled ffmpeg, then transcribed with `faster-whisper` | `pip install faster-whisper` (not in the base install — see requirements.txt) |
 
-Extracted content is chunked the same way as the built-in corpus and
-merged into a fresh in-memory index for that session. Your questions can
-then retrieve from your upload(s), the built-in RAG corpus, or both.
-Nothing is written to disk — the persisted `index/store.pkl` is never
-touched by an upload; remove the file from the uploader or restart the
-app and it's gone. If you want something to be part of the permanent
-corpus instead, save its extracted text as a `.txt` file under
-`data/corpus/` and rerun `python -m src.build_index`.
+Extracted content is chunked the same way as `data/corpus/` and merged
+into an in-memory index for that session. Your questions can then
+retrieve from your upload(s), whatever's in `data/corpus/`, or both.
+Nothing is ever written to disk from an upload — remove the file from the
+uploader, or just close/restart the app, and it's gone, no trace left
+behind. If you want something to persist across restarts instead, save
+its extracted text as a `.txt` file under `data/corpus/` — that folder
+(and only that folder) is what survives between runs.
 
 **Installing Tesseract OCR (Windows), needed for image uploads:**
 
@@ -233,7 +246,7 @@ scoring added:
    applied to both TF-IDF and BM25 so they can't disagree on what counts
    as content vs. noise.
 
-**Honest note on "performance":** at this corpus's size (27 chunks),
+**Honest note on "performance":** at this corpus's size (36 chunks),
 retrieval was already sub-millisecond before this change, so there was
 no real latency problem to solve — the ~0.07ms difference above is
 noise-level, not a meaningful speedup or slowdown. The real "performance"
@@ -247,8 +260,10 @@ can't silently regress it.
 
 ## Running the tests
 
-Everything in the test suite runs fully offline (it uses the extractive
-generator, not the API), so it works with no key configured:
+The test suite runs against a small fixture corpus checked into
+`tests/fixtures/corpus/` (not `data/corpus/`, which ships empty by
+design) and uses the offline extractive generator, so it needs no Ollama
+server running and no network access:
 
 ```powershell
 python -m unittest discover -v
@@ -262,35 +277,32 @@ rag_project/
 ├── app_streamlit.py            browser-based demo (streamlit run app_streamlit.py)
 ├── requirements.txt
 ├── .env.example
-├── data/corpus/                the demo knowledge base (6 short docs about RAG)
-├── index/                      saved TF-IDF index (created by build_index.py)
+├── data/corpus/                ships empty -- drop your own .txt files here (see its README.md)
 ├── src/
 │   ├── chunker.py               stage: chunking
 │   ├── bm25.py                   dependency-free BM25 scorer (hybrid retrieval)
 │   ├── vector_store.py          stage: retrieval — hybrid TF-IDF + BM25 (index + search)
 │   ├── retriever.py             stage: retrieval + ranking
-│   ├── generator.py              stage: augmentation + generation
+│   ├── generator.py              stage: augmentation + generation (Ollama, or offline fallback)
 │   ├── pdf_loader.py             extracts + chunks uploaded PDFs (pypdf)
 │   ├── image_loader.py           OCR + chunks uploaded images (pytesseract)
 │   ├── video_loader.py           audio extraction + transcription + chunks uploaded videos (ffmpeg, faster-whisper)
 │   ├── file_router.py            dispatches an upload to the right loader by extension
 │   ├── pipeline.py              orchestrates all stages, RAGPipeline class
-│   └── build_index.py           one-time script to build the index
+│   └── build_index.py           optional corpus sanity-check (no index is ever saved to disk)
 └── tests/
+    ├── fixtures/corpus/          small fixture corpus used only by the tests below
     ├── test_pipeline.py         offline unit tests for every stage
     └── test_retrieval_quality.py  labeled-eval-set accuracy regression test
 ```
 
 ## Using your own documents
 
-Drop any `.txt` files into `data/corpus/`, then rebuild the index:
-
-```powershell
-python -m src.build_index
-```
-
-The pipeline works unchanged — it doesn't know or care that the corpus
-used to be about RAG.
+Drop any `.txt` files into `data/corpus/` (see the placeholder
+`data/corpus/README.md` there) and just run `cli.py` or the Streamlit app
+— no build step needed, the index is built fresh from whatever's in that
+folder every time the app starts. The pipeline works unchanged regardless
+of what the corpus is about.
 
 ## Swapping in real embeddings (optional upgrade)
 
@@ -311,10 +323,16 @@ the vector store computes similarity.
 
 ## Relationship to the seminar deck and web demo
 
-This codebase is the same six-stage architecture presented in slides 5–6
-of the deck, and the same pipeline concept as the published interactive
-artifact ("Retrieval, then generation"). The difference is surface: the
-web artifact is a browser-based, zero-install demo for an audience; this
-project is real, inspectable Python you run locally in VS Code, intended
-for anyone who wants to read or modify the actual retrieval/ranking/
-generation logic.
+This codebase is the same six-stage architecture presented in slides 4–5
+of the deck ("How It Works — Architecture & Components" and "The RAG
+Pipeline -- End-to-End Flow"), and the same pipeline concept as the
+published interactive artifact ("Retrieval, then generation"). The
+difference is surface: the web artifact is a browser-based, zero-install
+demo for an audience; this project is real, inspectable Python you run
+locally in VS Code, intended for anyone who wants to read or modify the
+actual retrieval/ranking/generation logic — pointed at whatever documents
+you drop into `data/corpus/`, not a fixed demo topic.
+
+cd path\to\rag_project
+venv\Scripts\Activate.ps1
+streamlit run app_streamlit.py

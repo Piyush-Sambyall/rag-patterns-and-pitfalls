@@ -1,0 +1,27 @@
+Retrieval-augmented generation reduces hallucination compared to pure
+parametric generation, but it does not eliminate the sources of error;
+it mostly relocates them into the retrieval stage. A retrieval failure,
+where the vector search returns chunks that are irrelevant or misses the
+one chunk that actually contains the answer, produces a generator that is
+grounded in the wrong evidence, and the model may either give a wrong
+answer confidently or fail to answer at all.
+
+Context window limits are a second constraint: only a finite number of
+retrieved chunks can be placed into the prompt, so ranking and filtering
+quality directly determines whether the most relevant evidence survives
+into the final prompt. Stale or conflicting documents in the corpus are a
+third problem; if the knowledge base contains two versions of the same
+policy document, the retriever may surface both, and the generator has no
+principled way to know which one is current unless the documents are
+explicitly versioned or dated.
+
+Even with correct retrieval, hallucination can still occur if the
+generator ignores the provided context and falls back on its own
+parametric knowledge, especially when the retrieved passages are only
+partially relevant. Latency is a practical challenge too: retrieval,
+ranking, and generation are sequential steps, and each one adds delay, so
+production RAG systems must be carefully optimized to stay responsive.
+Finally, ranking errors, where a genuinely relevant chunk is retrieved but
+scored too low to make the final context window, and embedding drift from
+model upgrades, both silently degrade answer quality in ways that can be
+hard to detect without dedicated evaluation.

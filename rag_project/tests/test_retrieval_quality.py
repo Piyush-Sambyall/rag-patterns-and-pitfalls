@@ -17,7 +17,10 @@ from pathlib import Path
 from src.chunker import load_and_chunk_corpus
 from src.vector_store import TfidfVectorStore
 
-CORPUS_DIR = Path(__file__).resolve().parent.parent / "data" / "corpus"
+
+# Fixture corpus checked into the test suite -- see test_pipeline.py for why
+# this isn't data/corpus/ (which ships empty by design).
+CORPUS_DIR = Path(__file__).resolve().parent / "fixtures" / "corpus"
 
 EVAL_SET = [
     ("what is embedding drift?", "03_embeddings.txt"),
@@ -30,6 +33,8 @@ EVAL_SET = [
     ("what is contrastive objective in embedding training?", "03_embeddings.txt"),
     ("what is self-correcting RAG?", "06_future_agentic_rag.txt"),
     ("what does the term hallucination mean for language models?", "01_rag_overview.txt"),
+    ("what is customer support assist?", "07_applications.txt"),
+    ("how does RAG help with domain customization?", "08_benefits.txt"),
 ]
 
 # Measured top-1 accuracy at the time hybrid retrieval was added: 10/11 (~91%).

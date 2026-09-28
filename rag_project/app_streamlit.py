@@ -17,14 +17,16 @@ Run with:
 
     streamlit run app_streamlit.py
 
-(from the rag_project/ root, with the venv activated and the base index
-already built via `python -m src.build_index`).
+(from the rag_project/ root, with the venv activated). No index-build step
+is needed: the base index is built fresh, in memory, from whatever .txt
+files are in data/corpus/ at the moment the app starts. Nothing is cached
+to disk, so restarting the app (or the whole process) always starts clean
+-- there is no leftover data from a previous run to worry about.
 """
 
 from __future__ import annotations
 
 import html
-import os
 from pathlib import Path
 
 import streamlit as st
@@ -38,7 +40,6 @@ from src.vector_store import TfidfVectorStore
 
 ROOT = Path(__file__).resolve().parent
 CORPUS_DIR = ROOT / "data" / "corpus"
-INDEX_PATH = ROOT / "index" / "store.pkl"
 
 load_dotenv()
 
@@ -235,18 +236,22 @@ inject_theme()
 # --------------------------------------------------------------------------
 
 @st.cache_resource(show_spinner=False)
-def get_base_store() -> TfidfVectorStore | None:
-    """The persisted index built from data/corpus/ (the built-in RAG-topic docs)."""
-    if not INDEX_PATH.exists():
-        return None
-    return TfidfVectorStore.load(INDEX_PATH)
-
-
-def build_index_now() -> None:
+def get_base_store() -> TfidfVectorStore:
+    """
+    Builds the index fresh, in memory, from whatever .txt files are
+    currently in data/corpus/. Nothing is cached to disk -- `st.cache_resource`
+    only holds this for the lifetime of the running app process, so a
+    restart always rebuilds from scratch. An empty data/corpus/ (the
+    shipped default) is valid and produces an empty store, not an error.
+    """
     chunks = load_and_chunk_corpus(CORPUS_DIR)
     store = TfidfVectorStore()
     store.build(chunks)
-    store.save(INDEX_PATH)
+    return store
+
+
+def reset_base_store() -> None:
+    """Forces a rebuild from data/corpus/ on the next call to get_base_store()."""
     get_base_store.clear()
 
 
@@ -277,21 +282,11 @@ with st.sidebar:
         "2. **Retrieval** — hybrid TF-IDF + BM25\n"
         "3. **Ranking** — relevance floor + source diversity\n"
         "4. **Augmentation** — numbered context prompt\n"
-        "5. **Generation** — Claude, or offline fallback\n"
+        "5. **Generation** — local open-source model via Ollama, or offline fallback\n"
         "6. **Output**"
     )
 
-    st.markdown("---")
-    st.subheader("Generator status")
-    api_key_set = bool(os.environ.get("ANTHROPIC_API_KEY"))
-    if api_key_set:
-        st.success("ANTHROPIC_API_KEY detected — using Claude for generation.")
-    else:
-        st.warning(
-            "No ANTHROPIC_API_KEY found — using the offline extractive "
-            "fallback. Add a key to your `.env` file for fluent, "
-            "synthesized answers."
-        )
+    
 
     st.markdown("---")
     with st.expander("Retrieval settings"):
@@ -321,18 +316,20 @@ with st.sidebar:
 
 
 # --------------------------------------------------------------------------
-# Index bootstrap
+# Index bootstrap -- always fresh, never loaded from a previous run
 # --------------------------------------------------------------------------
 
 base_store = get_base_store()
 
-if base_store is None:
-    st.warning("No base index found yet. Build it once from the demo corpus below.")
-    if st.button("Build index from data/corpus/", type="primary"):
-        with st.spinner("Chunking corpus and building the hybrid index..."):
-            build_index_now()
+if base_store.is_empty():
+    st.info(
+        f"No documents in {CORPUS_DIR} yet. Drop your own `.txt` files there "
+        "and click the button below, or use the uploader in the sidebar to "
+        "add PDFs/images/videos for this session."
+    )
+    if st.button("Rescan data/corpus/", type="primary"):
+        reset_base_store()
         st.rerun()
-    st.stop()
 
 
 # --------------------------------------------------------------------------
@@ -407,7 +404,7 @@ col_query, col_toggle = st.columns([4, 1])
 with col_query:
     query = st.text_input(
         "Question",
-        placeholder="e.g. Why does RAG reduce hallucination compared to pure LLM generation?",
+        placeholder="What's your Query",
         label_visibility="collapsed",
     )
 with col_toggle:
@@ -423,7 +420,7 @@ if run_clicked and query:
         if compare_mode:
             try:
                 no_rag_result = pipeline.answer_without_rag(query)
-            except Exception as exc:  # missing anthropic package or API key
+            except Exception as exc:  # Ollama unreachable, model not pulled, etc.
                 no_rag_error = str(exc)
 
     # The directional flow trace, built from this run's real numbers.
@@ -474,8 +471,7 @@ if run_clicked and query:
             st.subheader("Without RAG (parametric only)")
             if no_rag_error:
                 st.error(
-                    "No-RAG comparison needs the `anthropic` package and "
-                    f"an ANTHROPIC_API_KEY: {no_rag_error}"
+                    f"No-RAG comparison needs a running Ollama server: {no_rag_error}"
                 )
             elif no_rag_result:
                 st.caption(
@@ -486,7 +482,14 @@ if run_clicked and query:
                 st.warning(no_rag_result.answer)
 
 st.markdown("---")
-with st.expander("Built-in corpus documents"):
-    for path in sorted(CORPUS_DIR.glob("*.txt")):
+corpus_files = sorted(CORPUS_DIR.glob("*.txt"))
+with st.expander(f"data/corpus/ documents ({len(corpus_files)})"):
+    if not corpus_files:
+        st.caption(
+            "Empty — no default data is shipped. Drop .txt files into "
+            "data/corpus/ and click \"Rescan data/corpus/\" above, or use "
+            "the uploader in the sidebar for a this-session-only source."
+        )
+    for path in corpus_files:
         st.markdown(f"**{path.name}**")
         st.caption(path.read_text(encoding="utf-8")[:220] + "...")

@@ -3,11 +3,14 @@ cli.py
 ------
 Interactive command-line demo for the RAG pipeline.
 
-Usage (from the project root, after `pip install -r requirements.txt`
-and building the index once):
+Usage (from the project root, after `pip install -r requirements.txt`):
 
-    python -m src.build_index
     python cli.py
+
+Every run builds the index fresh, in memory, from whatever .txt files are
+currently in data/corpus/ -- nothing is cached to disk, so there is never
+stale or leftover data from a previous session. Add your own .txt files
+to data/corpus/ before running it.
 
 Commands inside the REPL:
     <any question>      -> runs the full RAG pipeline (retrieve, rank,
@@ -19,15 +22,15 @@ Commands inside the REPL:
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
 
+from src.chunker import load_and_chunk_corpus
 from src.pipeline import RAGPipeline
 from src.vector_store import TfidfVectorStore
 
-INDEX_PATH = Path(__file__).resolve().parent / "index" / "store.pkl"
+CORPUS_DIR = Path(__file__).resolve().parent / "data" / "corpus"
 
 try:
     from rich.console import Console
@@ -82,28 +85,34 @@ def _print_result(result, label: str) -> None:
 
 
 def load_pipeline() -> RAGPipeline:
-    if not INDEX_PATH.exists():
-        _print(
-            f"No index found at {INDEX_PATH}.\n"
-            f"Build it first with:  python -m src.build_index",
-            style="bold red",
-        )
-        sys.exit(1)
-
-    store = TfidfVectorStore.load(INDEX_PATH)
+    """Builds the index fresh, in memory, from whatever is in data/corpus/
+    right now. Nothing is loaded from a previous run."""
+    chunks = load_and_chunk_corpus(CORPUS_DIR)
+    store = TfidfVectorStore()
+    store.build(chunks)  # empty chunks is fine -- store stays in a "no data" state
     return RAGPipeline(store)
 
 
 def main() -> None:
-    load_dotenv()  # loads ANTHROPIC_API_KEY from .env if present
+    load_dotenv()  # loads OLLAMA_HOST / OLLAMA_MODEL from .env if present
     pipeline = load_pipeline()
 
-    _print(
-        "RAG pipeline ready. Corpus topic: Retrieval-Augmented Generation.\n"
-        "Type a question, ':compare <question>' for a RAG-vs-no-RAG "
-        "comparison, or ':quit' to exit.\n",
-        style="bold cyan",
-    )
+    if pipeline.store.is_empty():
+        _print(
+            f"No documents found in {CORPUS_DIR}.\n"
+            "Add some .txt files there and restart -- every question will "
+            "return \"no relevant passages\" until you do.\n",
+            style="bold yellow",
+        )
+    else:
+        num_sources = len(pipeline.store.source_names())
+        _print(
+            f"RAG pipeline ready. Indexed {len(pipeline.store.chunks)} chunks "
+            f"from {num_sources} document(s) in {CORPUS_DIR}.\n"
+            "Type a question, ':compare <question>' for a RAG-vs-no-RAG "
+            "comparison, or ':quit' to exit.\n",
+            style="bold cyan",
+        )
 
     while True:
         try:

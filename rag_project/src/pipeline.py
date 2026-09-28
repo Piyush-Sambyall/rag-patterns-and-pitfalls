@@ -68,14 +68,14 @@ class RAGPipeline:
             sources=sorted({sc.chunk.source for sc in ranked}),
         )
 
-    def answer_without_rag(self, query: str, api_key: str | None = None) -> PipelineResult:
+    def answer_without_rag(self, query: str, model: str | None = None) -> PipelineResult:
         """
         Comparison mode: skips retrieval entirely and asks the LLM to answer
         from parametric knowledge only, so the two modes can be shown
         side by side (this mirrors the published web demo's compare view).
         """
         start = time.perf_counter()
-        no_context_generator = NoContextGenerator(api_key=api_key)
+        no_context_generator = NoContextGenerator(**({"model": model} if model else {}))
         answer_text = no_context_generator.generate(query, [])
         elapsed = time.perf_counter() - start
 

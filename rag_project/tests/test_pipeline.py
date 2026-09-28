@@ -12,7 +12,12 @@ from src.pipeline import RAGPipeline
 from src.retriever import Retriever
 from src.vector_store import TfidfVectorStore
 
-CORPUS_DIR = Path(__file__).resolve().parent.parent / "data" / "corpus"
+
+# Tests run against a small fixture corpus checked into the test suite,
+# not against data/corpus/ -- that folder ships empty by design (no
+# default demo data), so the app itself always starts with zero
+# documents until the user adds their own.
+CORPUS_DIR = Path(__file__).resolve().parent / "fixtures" / "corpus"
 
 
 class TestChunker(unittest.TestCase):
