@@ -1,14 +1,3 @@
-"""
-chunker.py
-----------
-Splits raw documents into overlapping chunks that are small enough to be
-retrieved individually and fed to an LLM as context.
-
-This is the first, unglamorous step of any RAG pipeline: garbage chunking
-(too big, too small, split mid-sentence) quietly wrecks retrieval quality
-later on, no matter how good the embeddings or the LLM are.
-"""
-
 from __future__ import annotations
 
 import re
@@ -18,7 +7,6 @@ from pathlib import Path
 
 @dataclass
 class Chunk:
-    """A single retrievable unit of text plus its provenance."""
 
     id: str
     text: str
@@ -43,11 +31,6 @@ def chunk_text(
     max_words: int = 90,
     overlap_sentences: int = 1,
 ) -> list[Chunk]:
-    """
-    Groups sentences into chunks of up to `max_words` words, carrying
-    `overlap_sentences` sentences over into the next chunk so that context
-    at a chunk boundary isn't lost entirely.
-    """
     sentences = _split_into_sentences(text)
     if not sentences:
         return []
@@ -92,7 +75,7 @@ def chunk_text(
 
 
 def load_and_chunk_corpus(corpus_dir: str | Path, max_words: int = 90) -> list[Chunk]:
-    """Reads every .txt file in `corpus_dir` and returns all chunks."""
+
     corpus_dir = Path(corpus_dir)
     all_chunks: list[Chunk] = []
 
@@ -102,3 +85,15 @@ def load_and_chunk_corpus(corpus_dir: str | Path, max_words: int = 90) -> list[C
         all_chunks.extend(file_chunks)
 
     return all_chunks
+
+
+"""
+chunker.py
+----------
+Splits raw documents into overlapping chunks that are small enough to be
+retrieved individually and fed to an LLM as context.
+
+This is the first, unglamorous step of any RAG pipeline: garbage chunking
+(too big, too small, split mid-sentence) quietly wrecks retrieval quality
+later on, no matter how good the embeddings or the LLM are.
+"""
