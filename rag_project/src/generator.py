@@ -1,33 +1,3 @@
-"""
-generator.py
-------------
-The "generation" stage of the pipeline: turns (query + retrieved context)
-into a final answer.
-
-Two implementations are provided:
-
-- OllamaGenerator: calls a locally-running Ollama server. Ollama is
-  open-source software that serves open-weight models (Llama, Mistral,
-  Gemma, Qwen, ...) on your own machine over a local HTTP API -- there is
-  no external company, account, or API key involved, which is why it
-  replaces the earlier Anthropic-backed generator in this build.
-- ExtractiveGenerator: a zero-dependency, offline fallback that just
-  returns the highest-scoring retrieved sentences. It exists so the
-  whole pipeline is runnable and demonstrable even with no LLM running --
-  useful for a live seminar where the Ollama server or Wi-Fi is not
-  guaranteed.
-
-`build_generator()` picks whichever one is usable, by checking whether an
-Ollama server is actually reachable right now.
-
-Setup for real LLM-backed generation:
-    1. Install Ollama:      https://ollama.com
-    2. Pull an open model:  ollama pull llama3.2
-    3. Leave it running:    ollama serve   (usually starts automatically)
-No API key, no signup, no external network calls at generation time --
-everything happens against http://localhost:11434 on your own machine.
-"""
-
 from __future__ import annotations
 
 import json
@@ -108,7 +78,6 @@ class BaseGenerator(ABC):
     @abstractmethod
     def generate(self, query: str, ranked_chunks: list[ScoredChunk]) -> str:
         ...
-
 
 class OllamaGenerator(BaseGenerator):
     """Calls a local, open-source Ollama server with the augmented, retrieval-grounded prompt."""
@@ -195,3 +164,35 @@ def build_generator() -> BaseGenerator:
     if ollama_is_reachable():
         return OllamaGenerator()
     return ExtractiveGenerator()
+
+
+"""
+generator.py
+
+The "generation" stage of the pipeline: turns (query + retrieved context)
+into a final answer.
+
+Two implementations are provided:
+
+- OllamaGenerator: calls a locally-running Ollama server. Ollama is
+  open-source software that serves open-weight models (Llama, Mistral,
+  Gemma, Qwen, ...) on your own machine over a local HTTP API -- there is
+  no external company, account, or API key involved, which is why it
+  replaces the earlier Anthropic-backed generator in this build.
+- ExtractiveGenerator: a zero-dependency, offline fallback that just
+  returns the highest-scoring retrieved sentences. It exists so the
+  whole pipeline is runnable and demonstrable even with no LLM running --
+  useful for a live seminar where the Ollama server or Wi-Fi is not
+  guaranteed.
+
+`build_generator()` picks whichever one is usable, by checking whether an
+Ollama server is actually reachable right now.
+
+Setup for real LLM-backed generation:
+    1. Install Ollama:      https://ollama.com
+    2. Pull an open model:  ollama pull llama3.2
+    3. Leave it running:    ollama serve   (usually starts automatically)
+No API key, no signup, no external network calls at generation time --
+everything happens against http://localhost:11434 on your own machine.
+
+"""
