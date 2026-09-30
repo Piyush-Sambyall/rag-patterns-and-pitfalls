@@ -1,6 +1,6 @@
 # Your knowledge base goes here
 
-This folder ships empty on purpose — there is no bundled demo corpus.
+This folder ships empty on purpose - there is no bundled demo corpus.
 Drop your own `.txt` files here (any plain-text documents you want the
 pipeline to answer questions about), then run the app.
 
@@ -13,4 +13,4 @@ the Streamlit sidebar.
 memory, from whatever `.txt` files are in this folder at that moment —
 there is no saved/cached index file to go stale or to accidentally carry
 old data into a new session. Add or remove files here, restart, and the
-pipeline reflects exactly what's currently in this folder — nothing more.
+pipeline reflects exactly what's currently in this folder - nothing more.
