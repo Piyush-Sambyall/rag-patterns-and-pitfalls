@@ -1,25 +1,3 @@
-"""
-cli.py
-------
-Interactive command-line demo for the RAG pipeline.
-
-Usage (from the project root, after `pip install -r requirements.txt`):
-
-    python cli.py
-
-Every run builds the index fresh, in memory, from whatever .txt files are
-currently in data/corpus/ -- nothing is cached to disk, so there is never
-stale or leftover data from a previous session. Add your own .txt files
-to data/corpus/ before running it.
-
-Commands inside the REPL:
-    <any question>      -> runs the full RAG pipeline (retrieve, rank,
-                            augment, generate) and prints every stage
-    :compare <question>  -> runs the same question WITH and WITHOUT RAG,
-                            side by side, so you can see the difference
-    :quit                -> exit
-"""
-
 from __future__ import annotations
 
 from pathlib import Path
@@ -143,3 +121,25 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+"""
+cli.py
+
+Interactive command-line demo for the RAG pipeline.
+
+Usage (from the project root, after `pip install -r requirements.txt`):
+
+    python cli.py
+
+Every run builds the index fresh, in memory, from whatever .txt files are
+currently in data/corpus/ -- nothing is cached to disk, so there is never
+stale or leftover data from a previous session. Add your own .txt files
+to data/corpus/ before running it.
+
+Commands inside the REPL:
+    <any question>      -> runs the full RAG pipeline (retrieve, rank,
+                            augment, generate) and prints every stage
+    :compare <question>  -> runs the same question WITH and WITHOUT RAG,
+                            side by side, so you can see the difference
+    :quit                -> exit
+"""
