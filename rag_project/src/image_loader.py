@@ -1,6 +1,6 @@
 """
 image_loader.py
-----------------
+
 Extracts text from an uploaded image via OCR (Tesseract, through the
 `pytesseract` wrapper), so a screenshot, a photo of a whiteboard, or a
 scanned page can be chunked and retrieved just like a PDF or corpus doc.
