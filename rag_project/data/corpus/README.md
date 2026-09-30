@@ -10,7 +10,7 @@ the Streamlit sidebar.
 
 **Nothing persists between runs.** Every time you start `cli.py` or
 `streamlit run app_streamlit.py`, the index is rebuilt from scratch, in
-memory, from whatever `.txt` files are in this folder at that moment —
+memory, from whatever `.txt` files are in this folder at that moment -
 there is no saved/cached index file to go stale or to accidentally carry
 old data into a new session. Add or remove files here, restart, and the
 pipeline reflects exactly what's currently in this folder - nothing more.
