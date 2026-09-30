@@ -133,7 +133,7 @@ def render_flow_diagram(
     directional connectors, with the query's own real numbers filling in
     each stage as it completes. This is what actually shows "the direction
     a given question took" through the system, using this run's real data
-    -- not a static diagram.
+    - not a static diagram.
     """
     q = html.escape(query)
     steps = [
