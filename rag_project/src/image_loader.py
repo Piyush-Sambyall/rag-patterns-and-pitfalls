@@ -1,16 +1,3 @@
-"""
-image_loader.py
-
-Extracts text from an uploaded image via OCR (Tesseract, through the
-`pytesseract` wrapper), so a screenshot, a photo of a whiteboard, or a
-scanned page can be chunked and retrieved just like a PDF or corpus doc.
-
-Requires the Tesseract OCR engine to be installed on the system --
-`pytesseract` is only a thin wrapper around it, not an OCR engine itself.
-See the README for the Windows install step; this is the one piece of
-this project that needs something outside `pip install`.
-"""
-
 from __future__ import annotations
 
 import io
@@ -37,3 +24,16 @@ def chunk_image(file_bytes: bytes, filename: str, max_words: int = 90) -> list[C
     if not text.strip():
         return []
     return chunk_text(text, source=filename, max_words=max_words)
+
+"""
+image_loader.py
+
+Extracts text from an uploaded image via OCR (Tesseract, through the
+`pytesseract` wrapper), so a screenshot, a photo of a whiteboard, or a
+scanned page can be chunked and retrieved just like a PDF or corpus doc.
+
+Requires the Tesseract OCR engine to be installed on the system --
+`pytesseract` is only a thin wrapper around it, not an OCR engine itself.
+See the README for the Windows install step; this is the one piece of
+this project that needs something outside `pip install`.
+"""
