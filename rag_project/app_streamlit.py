@@ -1,6 +1,5 @@
 """
 app_streamlit.py
------------------
 A browser-based interface for the RAG pipeline, built for live seminar
 demos. Every stage of the pipeline (retrieval -> ranking -> augmentation
 -> generation) is shown, not hidden behind a single "answer" box, so the
@@ -13,15 +12,13 @@ chunked, and merged into the retrieval index for the current session, so
 you can ask questions grounded in a document you just uploaded, on top
 of (or instead of) the built-in RAG-topic corpus.
 
-Run with:
-
-    streamlit run app_streamlit.py
+Run with: streamlit run app_streamlit.py
 
 (from the rag_project/ root, with the venv activated). No index-build step
 is needed: the base index is built fresh, in memory, from whatever .txt
 files are in data/corpus/ at the moment the app starts. Nothing is cached
 to disk, so restarting the app (or the whole process) always starts clean
--- there is no leftover data from a previous run to worry about.
+- there is no leftover data from a previous run to worry about.
 """
 
 from __future__ import annotations
@@ -47,12 +44,6 @@ st.set_page_config(
     page_title="RAG Pipeline",
     layout="wide",
 )
-
-
-# --------------------------------------------------------------------------
-# Theme: animated gradient background + a quieter, more deliberate look
-# than Streamlit's defaults. Applied once, at the top, before any content.
-# --------------------------------------------------------------------------
 
 def inject_theme() -> None:
     st.markdown(
@@ -493,3 +484,6 @@ with st.expander(f"data/corpus/ documents ({len(corpus_files)})"):
     for path in corpus_files:
         st.markdown(f"**{path.name}**")
         st.caption(path.read_text(encoding="utf-8")[:220] + "...")
+
+
+
