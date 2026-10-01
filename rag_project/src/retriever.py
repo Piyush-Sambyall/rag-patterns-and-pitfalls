@@ -1,23 +1,3 @@
-"""
-retriever.py
-------------
-Wraps the vector store with the two pipeline stages that sit between
-"raw similarity search" and "stuffing text into a prompt":
-
-  retrieval -> ranking
-
-`retrieve()` pulls a generous candidate pool from the vector store.
-`rank()` then re-orders / filters that pool with two cheap, explainable
-heuristics:
-
-  1. A minimum-similarity floor, so an off-topic query doesn't get
-     force-fed the "least bad" chunk as if it were relevant.
-  2. Source diversity (a simplified MMR / max-marginal-relevance idea):
-     once a source document has contributed a chunk, its other chunks
-     are pushed down the ranking, so the context window isn't wasted on
-     five near-duplicate chunks from the same file.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -64,3 +44,21 @@ class Retriever:
         candidates = self.retrieve(query)
         ranked = self.rank(candidates)
         return candidates, ranked
+
+"""
+retriever.pyWraps the vector store with the two pipeline stages that sit between
+"raw similarity search" and "stuffing text into a prompt":
+
+  retrieval -> ranking
+
+`retrieve()` pulls a generous candidate pool from the vector store.
+`rank()` then re-orders / filters that pool with two cheap, explainable
+heuristics:
+
+  1. A minimum-similarity floor, so an off-topic query doesn't get
+     force-fed the "least bad" chunk as if it were relevant.
+  2. Source diversity (a simplified MMR / max-marginal-relevance idea):
+     once a source document has contributed a chunk, its other chunks
+     are pushed down the ranking, so the context window isn't wasted on
+     five near-duplicate chunks from the same file.
+"""
