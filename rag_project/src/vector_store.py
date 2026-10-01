@@ -1,33 +1,3 @@
-"""
-vector_store.py
-----------------
-A small, self-contained vector store combining two classic sparse
-retrieval signals: TF-IDF cosine similarity and BM25.
-
-Why TF-IDF/BM25 instead of a neural embedding model? Two reasons, both
-deliberate for this project:
-
-1. It runs fully offline with no model download, so the demo works the
-   moment `pip install` finishes -- no waiting on a 400MB sentence
-   transformer, no GPU, no internet dependency for the retrieval half
-   of the pipeline.
-2. It is transparent: you can print the vocabulary and the weights and
-   *see* why a chunk was retrieved, which is genuinely useful when you
-   are explaining the pipeline in a seminar.
-
-Why hybrid (TF-IDF + BM25) instead of either alone: TF-IDF cosine
-captures broad topical overlap well but doesn't model term-frequency
-saturation or document length; BM25 does, and rewards exact keyword
-matches more directly. Combining them (BM25 re-weights the TF-IDF
-ranking rather than replacing it) improves ranking accuracy without
-changing the score's scale enough to break the relevance-floor
-filtering in retriever.py -- see `search()` below for exactly how
-they're combined and why.
-
-Swapping this for FAISS + a sentence-transformers encoder is a drop-in
-change -- see the "Swapping in real embeddings" section of the README.
-"""
-
 from __future__ import annotations
 
 import pickle
@@ -170,3 +140,32 @@ class TfidfVectorStore:
             store.bm25 = BM25Index()
             store.bm25.build([c.text for c in store.chunks])
         return store
+"""
+vector_store.py
+
+A small, self-contained vector store combining two classic sparse
+retrieval signals: TF-IDF cosine similarity and BM25.
+
+Why TF-IDF/BM25 instead of a neural embedding model? Two reasons, both
+deliberate for this project:
+
+1. It runs fully offline with no model download, so the demo works the
+   moment `pip install` finishes -- no waiting on a 400MB sentence
+   transformer, no GPU, no internet dependency for the retrieval half
+   of the pipeline.
+2. It is transparent: you can print the vocabulary and the weights and
+   *see* why a chunk was retrieved, which is genuinely useful when you
+   are explaining the pipeline in a seminar.
+
+Why hybrid (TF-IDF + BM25) instead of either alone: TF-IDF cosine
+captures broad topical overlap well but doesn't model term-frequency
+saturation or document length; BM25 does, and rewards exact keyword
+matches more directly. Combining them (BM25 re-weights the TF-IDF
+ranking rather than replacing it) improves ranking accuracy without
+changing the score's scale enough to break the relevance-floor
+filtering in retriever.py -- see `search()` below for exactly how
+they're combined and why.
+
+Swapping this for FAISS + a sentence-transformers encoder is a drop-in
+change -- see the "Swapping in real embeddings" section of the README.
+"""
