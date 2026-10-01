@@ -1,25 +1,3 @@
-"""
-video_loader.py
-----------------
-Extracts a spoken-word transcript from an uploaded video, so a recorded
-lecture, a demo walkthrough, or any talking-head clip can be chunked and
-retrieved just like a PDF, image, or corpus doc.
-
-Two steps, kept separate so each is independently testable:
-
-  1. extract_audio_wav()  -- pulls the audio track out of the video and
-     saves it as a 16kHz mono WAV. Uses `imageio-ffmpeg`, which bundles a
-     static ffmpeg binary through pip -- no separate system install of
-     ffmpeg is required, unlike most ffmpeg-based tools.
-
-  2. transcribe_audio()   -- runs that WAV through `faster-whisper`
-     (the "tiny" model, CPU, int8) to produce a text transcript.
-     faster-whisper is NOT bundled with the base install: it's a fairly
-     large dependency, and it downloads its model weights (~75MB for
-     "tiny") the first time it runs, which needs an internet connection
-     once. See the README for exactly what to expect on first run.
-"""
-
 from __future__ import annotations
 
 import subprocess
@@ -102,3 +80,25 @@ def chunk_video(file_bytes: bytes, filename: str, max_words: int = 90) -> list[C
     if not transcript.strip():
         return []
     return chunk_text(transcript, source=filename, max_words=max_words)
+
+"""
+video_loader.py
+
+Extracts a spoken-word transcript from an uploaded video, so a recorded
+lecture, a demo walkthrough, or any talking-head clip can be chunked and
+retrieved just like a PDF, image, or corpus doc.
+
+Two steps, kept separate so each is independently testable:
+
+  1. extract_audio_wav()  -- pulls the audio track out of the video and
+     saves it as a 16kHz mono WAV. Uses `imageio-ffmpeg`, which bundles a
+     static ffmpeg binary through pip -- no separate system install of
+     ffmpeg is required, unlike most ffmpeg-based tools.
+
+  2. transcribe_audio()   -- runs that WAV through `faster-whisper`
+     (the "tiny" model, CPU, int8) to produce a text transcript.
+     faster-whisper is NOT bundled with the base install: it's a fairly
+     large dependency, and it downloads its model weights (~75MB for
+     "tiny") the first time it runs, which needs an internet connection
+     once. See the README for exactly what to expect on first run.
+"""
