@@ -1,16 +1,3 @@
-"""
-pdf_loader.py
--------------
-Extracts text from user-uploaded PDFs so it can be chunked and added to
-the retrieval index alongside (or instead of) the built-in corpus.
-
-Uses `pypdf`, a pure-Python library with no external binary dependency
-(no poppler/ghostscript install needed) -- important for a one-command
-`pip install` setup on Windows. The trade-off: it extracts text that's
-actually embedded in the PDF; it does not OCR scanned/image-only pages.
-If a PDF returns no text, that's almost always why.
-"""
-
 from __future__ import annotations
 
 import io
@@ -39,3 +26,16 @@ def chunk_pdf(file_bytes: bytes, filename: str, max_words: int = 90) -> list[Chu
     if not text.strip():
         return []
     return chunk_text(text, source=filename, max_words=max_words)
+
+"""
+pdf_loader.py
+
+Extracts text from user-uploaded PDFs so it can be chunked and added to
+the retrieval index alongside (or instead of) the built-in corpus.
+
+Uses `pypdf`, a pure-Python library with no external binary dependency
+(no poppler/ghostscript install needed) -- important for a one-command
+`pip install` setup on Windows. The trade-off: it extracts text that's
+actually embedded in the PDF; it does not OCR scanned/image-only pages.
+If a PDF returns no text, that's almost always why.
+"""
