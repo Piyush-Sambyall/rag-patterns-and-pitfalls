@@ -1,17 +1,3 @@
-"""
-pipeline.py
------------
-Ties every module together into the six-stage pipeline used throughout
-the seminar deck:
-
-    query -> retrieval -> ranking -> augmentation -> generation -> output
-
-Each stage is a distinct, inspectable step on the returned PipelineResult,
-so a caller (CLI, tests, a notebook) can print or log exactly what
-happened at each hop -- which is the whole pedagogical point of building
-this instead of just calling an API.
-"""
-
 from __future__ import annotations
 
 import time
@@ -90,3 +76,17 @@ class RAGPipeline:
             latency_seconds=elapsed,
             sources=[],
         )
+
+"""
+pipeline.py
+
+Ties every module together into the six-stage pipeline used throughout
+the seminar deck:
+
+    query -> retrieval -> ranking -> augmentation -> generation -> output
+
+Each stage is a distinct, inspectable step on the returned PipelineResult,
+so a caller (CLI, tests, a notebook) can print or log exactly what
+happened at each hop -- which is the whole pedagogical point of building
+this instead of just calling an API.
+"""
